@@ -11,15 +11,7 @@ for i=1:filenum
     Y = [Y x];
 end
 
-% Mic7.wav的分帧图像
-figure(1);
-fs = 16000;
-time = (0:length(x)-1)/fs;
-plot(time,x);
-y = get(gca,'Ylim');
-min_x = y(1);
-max_x = y(2);
-title('Mic7.wav的分帧图像');
+
 
 
 %对图像进行分帧处理
@@ -41,8 +33,19 @@ for i=1:filenum
     [SF,y,amp] = endpoint_detection(x,wlen,inc,IS,fn);
     Q(:,:,i) = y';
     signs = [signs SF];
+    z = fft(y');%傅里叶变换 Z为1024*237
+    Q_fft(:,:,i) = z;
 end
 
+% Mic7.wav的分帧图像
+figure(1);
+fs = 16000;
+time = (0:length(x)-1)/fs;
+plot(time,x);
+y = get(gca,'Ylim');
+min_x = y(1);
+max_x = y(2);
+title('Mic7.wav的分帧图像');
 
 % 对最后个文件进行端点检测的画图
 flag = 0;
@@ -59,8 +62,6 @@ for i=1:fn
 end     
 
 
-%进行傅里叶变化
-[Q_fft]=fft_temp(x,wlen,inc,IS,fn,filenum,Y);
 
 %进行傅里叶变化的画图
 z=Q_fft(:,:,6);

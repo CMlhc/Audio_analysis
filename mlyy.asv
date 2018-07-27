@@ -4,22 +4,14 @@ Y = []; %整个波长的信号 122129*6
 %读取所有wav文件进入Y矩阵
 folder = 'E:\Workplace\mlyy\static\';
 diroutput = dir([folder,'*.wav']);
-filenum = length(diroutput);
+filenum = length(diroutput); %filenum=6
 for i=1:filenum
     filename = [folder,diroutput(i).name];
     [x] = audioread(filename);
     Y = [Y x];
 end
 
-% Mic7.wav的分帧图像
-figure(1);
-fs = 16000;
-time = (0:length(x)-1)/fs;
-plot(time,x);
-y = get(gca,'Ylim');
-min_x = y(1);
-max_x = y(2);
-title('Mic7.wav的分帧图像');
+
 
 
 %对图像进行分帧处理
@@ -30,6 +22,7 @@ fn = size(h,1);%帧数
 Q = zeros(wlen,fn,6);%1024*237*6
 IS = 0.3;
 
+%对波长进行取一半处理
 W2 = wlen/2; %W2=512
 n2 = 1:W2;
 
@@ -40,7 +33,10 @@ for i=1:filenum
     [SF,y,amp] = endpoint_detection(x,wlen,inc,IS,fn);
     Q(:,:,i) = y';
     signs = [signs SF];
+    z = fft(y');%傅里叶变换 Z为1024*237
+    Q_fft(:,:,i) = z;
 end
+
 
 
 % 对最后个文件进行端点检测的画图
@@ -58,17 +54,16 @@ for i=1:fn
 end     
 
 
-%进行傅里叶变化
 
-
-Z=fft_temp(x,wlen,inc,IS,fn,filenum,Y);
+%进行傅里叶变化的画图
+z=Q_fft(:,:,6);
 figure(2);
 ayy = abs(z(:,1));
 F = (0:W2-1) * fs/wlen;
 plot(F,ayy(1:W2));
+title('Mic7.wav的第一帧傅里叶变换图像');
 
 
-%进行傅里叶变化的画图
 
 
 
