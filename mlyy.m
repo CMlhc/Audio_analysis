@@ -38,6 +38,11 @@ for i=1:filenum
     Q_fft(:,:,i) = z;
 end
 
+%延时计算
+d=0.0435;
+distant = dis(d);
+
+
 % Mic7.wav的分帧图像
 figure(1);
 fs = 16000;
