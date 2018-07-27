@@ -1,5 +1,4 @@
 function [SF,y,amp] = endpoint_detection(x,wlen,inc,IS,fn)
-%
 %端点检测函数，对整个wav文件进行处理,SF表示表示每一帧是否是说话,amp表示每一帧的能量，y表示所有的情况
 x = x(:);
 fs = 16000;

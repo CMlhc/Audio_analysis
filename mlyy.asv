@@ -30,7 +30,7 @@ fn = size(h,1);%帧数
 Q = zeros(wlen,fn,6);%1024*237*6
 IS = 0.3;
 
-W2 = wlen/2; 
+W2 = wlen/2; %W2=512
 n2 = 1:W2;
 
 
@@ -59,21 +59,13 @@ end
 
 
 %进行傅里叶变化
-for i=1:filenum
-    x = Y(:,i);
-    [SF,y,amp] = endpoint_detection(x,wlen,inc,IS,fn);
-    Q(:,:,i) = y';
-    signs(:,i) = SF;
-    z = fft(y');%傅里叶变换 Z为1024*237
-    Z(:,:,i) = z;
-end
 
 
+Z=fft_temp(x,wlen,inc,IS,fn,filenum,Y);
 figure(2);
 ayy = abs(z(:,1));
-%w2 = wlen/2+1;%W2=513
-F = (0:w2-1) * fs/wlen;
-plot(F,ayy(1:w2));
+F = (0:W2-1) * fs/wlen;
+plot(F,ayy(1:W2));
 
 
 %进行傅里叶变化的画图
