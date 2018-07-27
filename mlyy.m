@@ -41,7 +41,8 @@ end
 %延时计算
 d=0.0435;
 distant = dis(d);
-
+w=2*pi*fs;
+time
 
 % Mic7.wav的分帧图像
 figure(1);
