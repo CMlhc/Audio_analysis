@@ -17,12 +17,13 @@ end
 %对图像进行分帧处理
 wlen = 1024;
 inc = 512;
+fs=16000;
 h = enframe(x,wlen,inc);%取最后一个的分帧
 fn = size(h,1);%帧数
 Q = zeros(wlen,fn,6);%1024*237*6
 IS = 0.3;
 
-%对波长进行取一半处理
+%对wav文件进行取一半处理
 W2 = wlen/2; %W2=512
 n2 = 1:W2;
 
@@ -30,7 +31,7 @@ n2 = 1:W2;
 signs=[];%6个区间集合，判断是否是说话还是静音，1为说话，0为静音
 for i=1:filenum
     x = Y(:,i); %122129*1
-    [SF,y,amp] = endpoint_detection(x,wlen,inc,IS,fn);
+    [SF,y,amp] = endpoint_detection(x,wlen,inc,IS,fn,fs);
     Q(:,:,i) = y';
     signs = [signs SF];
     z = fft(y');%傅里叶变换 Z为1024*237
@@ -47,7 +48,6 @@ min_x = y(1);
 max_x = y(2);
 title('Mic7.wav的分帧图像');
 
-% 对最后个文件进行端点检测的画图
 flag = 0;
 for i=1:fn
     if SF(i) == 0 && flag == 0
@@ -63,7 +63,7 @@ end
 
 
 
-%进行傅里叶变化的画图
+%Mic7.wav的第一帧傅里叶变换图像
 z=Q_fft(:,:,6);
 figure(2);
 ayy = abs(z(:,1));
