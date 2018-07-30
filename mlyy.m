@@ -1,89 +1,61 @@
-clear;
-Y = []; %整个波长的信号 122129*6
+clear 
+[Y,length_wav,filenum] = start();%取出文件 length_wav文件点数
 
-%读取所有wav文件进入Y矩阵
-folder = 'E:\Workplace\mlyy\static\';
-diroutput = dir([folder,'*.wav']);
-filenum = length(diroutput); %filenum=6
+fs = 16000;wlen = 1024;inc = 512;IS = 0.15;%前0.15秒，认为是无声状态
+%[min_x,max_x] = figurey(length_wav,fs,x);%画出第一个图
+fn = fix((length_wav - wlen +inc) / inc);%帧数237
+%frameTime = (((1:fn)-1)*inc+wlen/2)/fs;%计算每帧对应的时间
+
+%Q = zeros(wlen,fn,filenum);%1024*237*6分帧结果
+signs = zeros(fn,filenum);%237*6
+%sign = zeros(fn,1);%237合并到个标志
+Z = zeros(wlen,fn,filenum);%1024*237*6傅里叶变换结果
+w2 = wlen/2+1;%513
+Fnum = (0:w2-1) * fs/wlen;%计算FFT后的频率刻度
+
 for i=1:filenum
-    filename = [folder,diroutput(i).name];
-    [x] = audioread(filename);
-    Y = [Y x];
+    x = Y(:,i);
+    [SF,y] = judge(x,wlen,inc,IS,fn,fs);
+    %Q(:,:,i) = y';%y'1024*237
+    signs(:,i) = SF;
+    z = fft(y');%傅里叶变换 z为1024*237
+    Z(:,:,i) = z;
 end
+sign = (sum(signs,2)==6);
+%addline(fn,SF,min_x,max_x);%加竖线
 
-
-
-
-%对图像进行分帧处理
-wlen = 1024;
-inc = 512;
-fs=16000;
-h = enframe(x,wlen,inc);%取最后一个的分帧
-fn = size(h,1);%帧数
-Q = zeros(wlen,fn,6);%1024*237*6
-IS = 0.3;
-
-%对wav文件进行取一半处理
-W2 = wlen/2; %W2=512
-n2 = 1:W2;
-
-
-signs=[];%6个区间集合，判断是否是说话还是静音，1为说话，0为静音
-for i=1:filenum
-    x = Y(:,i); %122129*1
-    [SF,y,amp] = endpoint_detection(x,wlen,inc,IS,fn,fs);
-    Q(:,:,i) = y';
-    signs = [signs SF];
-    z = fft(y');%傅里叶变换 Z为1024*237
-    Q_fft(:,:,i) = z;
-end
-
-%延时计算
-d=0.0435;
+d = 0.0435;
 distant = dis(d);
-w=2*pi*fs;
-time
-
-% Mic7.wav的分帧图像
-figure(1);
-fs = 16000;
-time = (0:length(x)-1)/fs;
-plot(time,x);
-y = get(gca,'Ylim');
-min_x = y(1);
-max_x = y(2);
-title('Mic7.wav的分帧图像');
-
-flag = 0;
-for i=1:fn
-    if SF(i) == 0 && flag == 0
-        flag = 1;
-        middle = (i-1) * inc / fs;
-        line([middle,middle],[min_x,max_x],'color','r');
-    elseif SF(i) == 1 && flag == 1
-        flag = 0;
-        middle = (i-1) * inc / fs;
-        line([middle,middle],[min_x,max_x],'color','r');
+time = -distant./340;%360 * 6
+w = (2 * pi * Fnum)';%513个角频率
+%new = zeros(w2,filenum,360,fn);
+clear i
+% 每帧，有360个方向
+P = zeros(360,fn);
+PMAX = zeros(fn,1);
+e = zeros(filenum,filenum);
+axis([1 250 0 360]);
+for a=1:fn %237个帧
+    old = Z(1:w2,a,:);
+    old = squeeze(old);%去掉中间长度为1的那个维 513 * 6
+    aa = old ./ abs(old);
+    for b=1:360 %360个方向
+        tau = w * time(b,:);%513 * 6 wΔt
+        bu = exp(i * tau);
+        y2 = aa .* bu;
+        s = abs(sum(y2,2)).^2;
+        P(b,a) = trapz(w,s);
     end
-end     
-
-
-
-%Mic7.wav的第一帧傅里叶变换图像
-z=Q_fft(:,:,6);
-figure(2);
-ayy = abs(z(:,1));
-F = (0:W2-1) * fs/wlen;
-plot(F,ayy(1:W2));
-title('Mic7.wav的第一帧傅里叶变换图像');
-
-
-
-
-
-
-
-
-
-
+    [h,j] = max((P(:,a)));
+    if sign(a) == 1
+        PMAX(a) = j;
+    else
+        PMAX(a) = nan;
+    end
+    %pause(0.05);
+    axis([1 237 0 360]);
+    scatter(a,PMAX(a),8,'filled');
+    hold on;
+end
+%scatter(1:fn,PMAX);
 

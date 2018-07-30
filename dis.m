@@ -1,6 +1,5 @@
-function distant = dis(d)
 %路程差的计算
-
+function [distant] = dis(d)
 data = zeros(360,6);
 for i = 1:6
     for j = 1:360
@@ -8,3 +7,4 @@ for i = 1:6
     end
 end
 distant = data;
+end
