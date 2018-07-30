@@ -52,7 +52,7 @@ for a=1:fn %237ธ๖ึก
     else
         PMAX(a) = nan;
     end
-    %pause(0.05);
+    pause(0.001);
     axis([1 237 0 360]);
     scatter(a,PMAX(a),8,'filled');
     hold on;
