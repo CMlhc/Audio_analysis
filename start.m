@@ -1,6 +1,6 @@
 function [Y,length_wav,filenum] = start()
 Y = [];%122129*6
-folder = 'E:\Workplace\mlyy\static\1\';%1表示旋转的点，2表示静止的点
+folder = 'E:\Workplace\mlyy\static\3\';
 diroutput = dir([folder,'*.wav']);
 filenum = length(diroutput);
 for i=1:filenum
