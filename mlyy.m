@@ -8,8 +8,9 @@ fd = fix((fs/2 - nwlen + ninc) / ninc);%段数79
 
 signs = zeros(fn,filenum);%fn*6
 Z = zeros(wlen,fn,filenum);%1024*fn*6傅里叶变换结果
-w2 = wlen/2+1;%513
-Fnum = (0:w2-1) * fs/wlen;%计算FFT后的频率刻度
+v513 = wlen/2+1;%513
+Fnum = (0:v513-1) * fs/wlen;
+w = (0:v513-1) * fs/wlen * 2 * pi;%计算FFT后的频率刻度
 
 for i=1:filenum
     x = Y(:,i);
@@ -22,99 +23,84 @@ sign = (sum(signs,2)==6);%标志向量
 
 d = 0.0435;
 distant = dis(d);
-time = distant./340;%360 * 6
-clear i
+time = -distant./340;%360 * 6
 
-num = fix((w2*nwlen*2)/ fs);%12
-zstatic =10;%阈值
-uw = 15;
+e=zeros(513,360,6);%延时补偿数组
+for a=1:513
+    for j=1:360
+        for k =1:6
+            e(a,j,k) = exp(w(a)*time(j,k)*1j);
+        end
+    end
+end
+
+M = zeros(v513,filenum,360);
+for b=1:360
+    M(:,:,b) = squeeze(e(:,b,:));
+end
+
+num = fix((v513*nwlen*2)/ fs);%12
+u = 5;
 limit = 2;
 
-
 q = zeros(fd,num);%79*12 - 取频率
-
 q(:,:) = doublefen(num,ninc,fd,Fnum);
-q(:,:) = doublefen(num,ninc,fd,Fnum);
-     
-ss = zeros(360,fn);
-f1 = zeros(fn,fd,num,filenum);%79*12*6 - 取FFT的结果
-for pp=1:fn
-      for a=1:filenum
-           o = Z(1:w2,pp,a);
-           for b=1:fd
-                f1(pp,b,:,a) = o(q(b,:)/(fs/wlen));
-           end
-      end 
-end
+q2(:,:) = q(:,:)/(fs/wlen);%频率对应点 79 * 12
+ 
 
-
+ys = zeros(360,fn);
 
 for pp=1:fn
-    tic;
     if sign(pp) == 1
-        %ss = zeros(360,1);
-        for a=1:fd %79个段数
-            old = f1(pp,a,:,:);% 1*12*6
-            w = q(a,:) * 2 * pi; %1*12
-            old = squeeze(old);%去掉长度为1的那个维 12 * 6
-            gx = old ./ abs(old);
-            t = zeros(360,1);
-            
-            w1=w(1:6);
-           
-            %w1=repmat(w1,360,1);
-            w2=w(7:12);
-            %w2=repmat(w2,360,1);
-            
-            tau1=time*w1'; %360*1
-            tau2=time*w2'; %360*1
-            
-            
-
-%             for b=1:360 %360个方向
-%                 tau =  time(b,:)'*w;%6* 12 wΔt
-%                 bu = exp(i * tau);
-%                 y2 = gx' .* bu;
-%                 s = abs(sum(y2)).^2;
-%                 t(b) = trapz(w,s);
-%             end            
-            
-
-            
-%             for b=1:360 %360个方向
-%                 tau = w' * time(b,:);%12 * 6 wΔt
-%                 bu = exp(i * tau);
-%                 y2 = gx .* bu;
-%                 s = abs(sum(y2,2)).^2;
-%                 t(b) = trapz(w,s);
-%             end
-
-            [h,j] = max(t);
-            ss(j,pp) = ss(j,pp) + 1;
+        tic;
+        zstatic = 4;%阈值
+        g = zeros(360,1);
+        Y = zeros(v513,360);
+        for b=1:360
+            %M2 = squeeze(e(:,b,:));%513*6
+            X = squeeze(Z(1:v513,pp,:));%513*6
+            G = 1 ./ abs(X);
+            h = M(:,:,b);
+            Y(:,b) = abs(sum(G.*X.*h,2));
         end
+        for c=1:fd %fd=79
+            s = q2(c,1);
+            en = q2(c,12);
+            s2 = q(c,:)*2*pi;
+            P = trapz(s2,Y(s:en,:).^2);
+            [no, angle] = max(P);
+            g(angle) = g(angle) + 1;
+        end
+        mul = zeros(limit,1);
         count = 1;
-        double = zeros(limit,1);
-        c = 0;
-        for b=1:360 
-            if count > limit
-                break
-            end
-            if ss(b,pp) >= zstatic && b > c
-                double(count) = b;
+        while count < limit
+            [c,m] = max(g);
+            if c > zstatic
+                mul(count) = m;
                 count = count + 1;
-                %zstatic = max(ss(b,pp)/2,zstatic);
-                c = b + uw;
+                if m-u <= 0
+                    g(1:m+u) = 0;
+                elseif m+u > 360
+                    g(m-u:360) = 0; 
+                else
+                    g(m-u:m+u) = 0;
+                end
+                zstatic = max(c/2,zstatic);
+            else
+                break;
             end
         end
-        figure(1)
+        figure(1);
         axis([1 fn+10 0 360]);
-        if double(1) ~= 0 
-            plot(pp,double(1),'.');
+        if mul(1) > 0
+            plot(pp,mul(1),'.');
         end
-        if double(2) ~= 0 
-            plot(pp,double(2),'*');
+        if mul(2) > 0
+            plot(pp,mul(2),'.');
         end
         hold on;
+        toc;
     end
-    toc;
 end
+
+        
