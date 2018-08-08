@@ -1,6 +1,5 @@
-clear
+clear;
 [Y,length_wav,filenum] = start();%取出文件 length_wav最后的文件点数
-
 fs = 16000;wlen = 1024;inc = 512;IS = 0.15;%前0.15秒，认为是无声状态
 fn = fix((length_wav - wlen +inc) / inc);%帧数
 nwlen = 200; ninc = 100;
@@ -12,7 +11,7 @@ v513 = wlen/2+1;%513
 Fnum = (0:v513-1) * fs/wlen;
 w = (0:v513-1) * fs/wlen * 2 * pi;%计算FFT后的频率刻度
 
-for i=1:filenum
+for i=1:filenum %filenum=6
     x = Y(:,i);
     [SF,y] = judge(x,wlen,inc,IS,fn,fs);
     signs(:,i) = SF;
@@ -34,7 +33,7 @@ for a=1:513
     end
 end
 
-M = zeros(v513,filenum,360);
+M = zeros(v513,filenum,360); %513*6*360
 for b=1:360
     M(:,:,b) = squeeze(e(:,b,:));
 end
@@ -50,27 +49,31 @@ q2(:,:) = q(:,:)/(fs/wlen);%频率对应点 79 * 12
 
 ys = zeros(360,fn);
 
-for pp=1:fn
+for pp=1:fn %fn=237
     if sign(pp) == 1
         tic;
         zstatic = 4;%阈值
-        g = zeros(360,1);
-        Y = zeros(v513,360);
+        g = zeros(360,1);%360*1
+        Y = zeros(v513,360);%513*360
         for b=1:360
             %M2 = squeeze(e(:,b,:));%513*6
             X = squeeze(Z(1:v513,pp,:));%513*6
             G = 1 ./ abs(X);
-            h = M(:,:,b);
-            Y(:,b) = abs(sum(G.*X.*h,2));
+            h = M(:,:,b); %513*6
+            Y(:,b) = abs(sum(G.*X.*h,2));%513*360
         end
+        
+        %对每一段选取最大的角度，对角度进行投票
         for c=1:fd %fd=79
             s = q2(c,1);
             en = q2(c,12);
             s2 = q(c,:)*2*pi;
-            P = trapz(s2,Y(s:en,:).^2);
+            P = trapz(s2,Y(s:en,:).^2);%1*360
             [no, angle] = max(P);
             g(angle) = g(angle) + 1;
         end
+        
+        %投票点的计算，选取最大的值
         mul = zeros(limit,1);
         count = 1;
         while count < limit
@@ -90,6 +93,7 @@ for pp=1:fn
                 break;
             end
         end
+        
         figure(1);
         axis([1 fn+10 0 360]);
         if mul(1) > 0

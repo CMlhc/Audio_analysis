@@ -1,6 +1,6 @@
 function [Y,length_wav,filenum] = start()
 Y = [];%122129*6
-folder = 'E:\Workplace\mlyy\static\3\';
+folder = 'E:\Workplace\mlyy\static\2\';
 diroutput = dir([folder,'*.wav']);
 filenum = length(diroutput);
 for i=1:filenum
